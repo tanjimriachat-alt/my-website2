@@ -136,6 +136,7 @@
             <input type="text" id="adm-u" placeholder="Admin Email/Phone" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:5px;">
             <input type="text" id="adm-p" placeholder="Admin Password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
             <button onclick="manageAccess('admin', 'add')" style="width:100%; background:#6366f1; color:white; padding:12px; border:none; border-radius:10px; font-weight:bold;">Add Admin</button>
+            <div id="admin-list-ui"></div>
         </div>
         <h4 style="color:#10b981; margin-bottom:10px;">Student Access</h4>
         <input type="text" id="stu-u" placeholder="Student Phone" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:5px;">
@@ -192,14 +193,14 @@
         btn.innerText = "Checking..."; btn.disabled = true;
         let u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pass').value;
 
-        // Static List Check
+        // 1. Static List Check (Super Fast)
         let staticMatch = coreAdmins.find(a => a.u === u && a.p === p);
         if (staticMatch) {
             isAdmin = true; if(u === "01874816789") isMainAdmin = true; startApp(); return;
         }
 
-        // Student/Extra Admin Check from Database
-        db.ref('access').once('value', s => {
+        // 2. Database Check for New Students/Admins
+        db.ref('access').once('value').then(s => {
             const data = s.val() || {admins:{}, students:{}};
             let found = false;
             
@@ -211,7 +212,7 @@
             if(found) {
                 startApp();
             } else {
-                // Firebase Auth Check for registered emails
+                // 3. Last Fallback: Firebase Auth
                 auth.signInWithEmailAndPassword(u === "01874816789" ? mainAdminEmail : u, p).then(() => {
                     isAdmin = true; if(u === "01874816789") isMainAdmin = true; startApp();
                 }).catch(() => {
@@ -219,6 +220,10 @@
                     btn.innerText = "Enter Dashboard"; btn.disabled = false;
                 });
             }
+        }).catch(err => {
+            // Error connecting to DB
+            console.error(err);
+            btn.innerText = "Enter Dashboard"; btn.disabled = false;
         });
     }
 
@@ -303,7 +308,7 @@
                 document.getElementById(type==='student'?'stu-u':'adm-u').value = '';
                 document.getElementById(type==='student'?'stu-p':'adm-p').value = '';
             });
-        } else if(action === 'del') { db.ref(`access/${type}s`).child(key).remove(); }
+        } else if(action === 'del') { if(confirm("Remove?")) db.ref(`access/${type}s`).child(key).remove(); }
     }
 </script>
 </body>
