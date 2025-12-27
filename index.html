@@ -25,13 +25,11 @@
 
         #main-app { display: none; height: 100vh; width: 100%; display: flex; position: relative; }
         
-        /* SIDEBAR WITH MOBILE FIX */
         .sidebar { width: 280px; background: var(--sidebar-bg); color: #f8fafc; display: flex; flex-direction: column; padding: 25px 20px; transition: 0.3s; z-index: 1000; }
         .sidebar h2 { font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 20px; text-align: center; color: #a855f7; }
         .subject-link { padding: 12px 15px; margin-bottom: 5px; border-radius: 12px; cursor: pointer; font-size: 0.95rem; }
         .subject-link.active { background: var(--primary-gradient); color: white; }
 
-        /* MOBILE CLOSE BUTTON */
         #close-sidebar { display: none; position: absolute; top: 15px; right: 15px; background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; }
 
         .main-content { flex: 1; padding: 20px; overflow-y: auto; background: #f1f5f9; position: relative; }
@@ -50,7 +48,6 @@
 
         .edit-badge { position: absolute; top: 12px; right: 12px; background: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; cursor: pointer; font-weight: bold; }
 
-        /* OVERLAY FOR MOBILE */
         #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
 
         .help-anchor { position: fixed; bottom: 20px; left: 20px; z-index: 998; }
@@ -182,33 +179,46 @@
     const mainAdminEmail = "tanjimriachat@gmail.com";
     const coreAdmins = [{u: "01866280090", p: "meherajwafi"}, {u: "01874816789", p: "TANJIMRIACHAT@"}, {u: "01847757205", p: "MFT28"}];
 
-    // MOBILE SIDEBAR LOGIC
     function toggleSidebar() { 
         document.getElementById('sidebar-main').classList.toggle('active'); 
         document.getElementById('sidebar-overlay').classList.toggle('active');
     }
-
     function toggleInfo() { const c = document.getElementById('info-card'); c.style.display = c.style.display === 'block' ? 'none' : 'block'; }
     function openLogin(m) { document.getElementById('login-popup').style.display = 'flex'; }
 
+    // DYNAMIC LOGIN FIX
     function handleLogin() {
         const btn = document.getElementById('login-btn-final');
         btn.innerText = "Checking..."; btn.disabled = true;
         let u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pass').value;
 
-        if(u === "01874816789") { isAdmin=true; isMainAdmin=true; startApp(); return; }
-        if((u === "01866280090" && p === "meherajwafi") || (u === "01847757205" && p === "MFT28")) { isAdmin=true; startApp(); return; }
+        // Static List Check
+        let staticMatch = coreAdmins.find(a => a.u === u && a.p === p);
+        if (staticMatch) {
+            isAdmin = true; if(u === "01874816789") isMainAdmin = true; startApp(); return;
+        }
 
-        auth.signInWithEmailAndPassword(u === "01874816789" ? mainAdminEmail : u, p).then(() => {
-            isAdmin = true; if(u === "01874816789") isMainAdmin = true; startApp();
-        }).catch(() => {
-            db.ref('access').once('value', s => {
-                const data = s.val() || {admins:{}, students:{}};
-                let found = false;
-                Object.values(data.admins).forEach(a => { if(a.u===u && a.p===p) { isAdmin=true; found=true; }});
-                Object.values(data.students).forEach(s => { if(s.u===u && s.p===p) { isAdmin=false; found=true; }});
-                if(found) startApp(); else { alert("Error!"); btn.innerText = "Enter Dashboard"; btn.disabled = false; }
-            });
+        // Student/Extra Admin Check from Database
+        db.ref('access').once('value', s => {
+            const data = s.val() || {admins:{}, students:{}};
+            let found = false;
+            
+            // Check Database Admins
+            Object.values(data.admins).forEach(a => { if(a.u===u && a.p===p) { isAdmin=true; found=true; }});
+            // Check Database Students
+            Object.values(data.students).forEach(s => { if(s.u===u && s.p===p) { isAdmin=false; found=true; }});
+
+            if(found) {
+                startApp();
+            } else {
+                // Firebase Auth Check for registered emails
+                auth.signInWithEmailAndPassword(u === "01874816789" ? mainAdminEmail : u, p).then(() => {
+                    isAdmin = true; if(u === "01874816789") isMainAdmin = true; startApp();
+                }).catch(() => {
+                    alert("Login Failed! Please check user & password.");
+                    btn.innerText = "Enter Dashboard"; btn.disabled = false;
+                });
+            }
         });
     }
 
@@ -288,8 +298,11 @@
     }
     function manageAccess(type, action, key = null) {
         if(action === 'add') {
-            const u = document.getElementById(type==='student'?'stu-u':'adm-u').value, p = document.getElementById(type==='student'?'stu-p':'adm-p').value;
-            if(u && p) db.ref(`access/${type}s`).push({u, p});
+            const u = document.getElementById(type==='student'?'stu-u':'adm-u').value.trim(), p = document.getElementById(type==='student'?'stu-p':'adm-p').value.trim();
+            if(u && p) db.ref(`access/${type}s`).push({u, p}).then(() => {
+                document.getElementById(type==='student'?'stu-u':'adm-u').value = '';
+                document.getElementById(type==='student'?'stu-p':'adm-p').value = '';
+            });
         } else if(action === 'del') { db.ref(`access/${type}s`).child(key).remove(); }
     }
 </script>
