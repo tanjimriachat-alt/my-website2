@@ -3,260 +3,366 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TANJIM - Mobile Nexus</title>
+    <title>TANJIM - Academic Nexus Live</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --glass-bg: rgba(255, 255, 255, 0.75);
-            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            --sidebar-bg: #0f172a;
-            --text-main: #1e293b;
-        }
+        :root { --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); --sidebar-bg: #0f172a; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Hind Siliguri', sans-serif; background: #f8fafc; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        body { font-family: 'Hind Siliguri', sans-serif; background: #f8fafc; height: 100vh; overflow: hidden; }
 
-        /* GATEWAY SCREEN */
+        /* UI Elements */
         #gateway-screen { position: fixed; inset: 0; background: var(--primary-gradient); display: flex; justify-content: center; align-items: center; z-index: 9999; }
-        .gateway-card { background: white; padding: 30px; border-radius: 25px; text-align: center; width: 90%; max-width: 400px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); }
-        .option-btn { display: block; width: 100%; padding: 16px; margin: 12px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .user-btn { background: #f1f5f9; color: #4f46e5; border: 2px solid #e2e8f0; }
-        .admin-btn-gate { background: var(--primary-gradient); color: white; }
+        .gateway-card { background: white; padding: 40px; border-radius: 30px; text-align: center; width: 90%; max-width: 450px; }
+        .option-btn { display: block; width: 100%; padding: 18px; margin: 15px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
 
-        /* LOGIN POPUP */
         #login-popup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
-        .login-box { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; }
+        .login-box { background: white; padding: 30px; border-radius: 20px; width: 320px; text-align: center; }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; }
 
-        /* MOBILE HEADER */
-        #mobile-nav { display: none; background: var(--sidebar-bg); color: white; padding: 15px 20px; justify-content: space-between; align-items: center; z-index: 900; }
-        #mobile-nav h2 { font-family: 'Dancing Script', cursive; font-size: 1.8rem; }
-        .menu-toggle { font-size: 1.5rem; cursor: pointer; }
-
-        /* APP LAYOUT */
-        #main-app { display: none; flex: 1; height: 100%; overflow: hidden; }
-        
-        /* SIDEBAR (Responsive) */
-        .sidebar { width: 280px; background: var(--sidebar-bg); color: #f8fafc; display: flex; flex-direction: column; padding: 25px 20px; transition: 0.3s ease; z-index: 1000; }
-        .sidebar h2 { font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 30px; background: linear-gradient(to right, #fff, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
-        .subject-link { padding: 12px 15px; margin-bottom: 5px; border-radius: 12px; cursor: pointer; font-size: 0.95rem; display: flex; justify-content: space-between; }
+        #main-app { display: none; height: 100vh; width: 100%; display: flex; }
+        .sidebar { width: 280px; background: var(--sidebar-bg); color: #f8fafc; display: flex; flex-direction: column; padding: 25px 20px; }
+        .sidebar h2 { font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 30px; text-align: center; color: #a855f7; }
+        .subject-link { padding: 12px 15px; margin-bottom: 5px; border-radius: 12px; cursor: pointer; font-size: 0.95rem; }
         .subject-link.active { background: var(--primary-gradient); color: white; }
 
-        /* MAIN CONTENT */
-        .main-content { flex: 1; padding: 20px; overflow-y: auto; background: #f1f5f9; width: 100%; }
-        .header-section { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100%, 1fr)); gap: 15px; }
+        .main-content { flex: 1; padding: 30px; overflow-y: auto; background: #f1f5f9; }
+        .header-section { margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .chapter-card { background: white; padding: 24px; border-radius: 20px; border: 1px solid #e2e8f0; position: relative; }
         
-        @media (min-width: 600px) {
-            .chapter-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
-        }
+        /* Resource Styling */
+        .resource-item { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 10px 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #eee; }
+        .res-actions { display: flex; gap: 8px; }
+        .res-btn { text-decoration: none; font-weight: 700; font-size: 0.8rem; padding: 6px 12px; border-radius: 8px; display: flex; align-items: center; gap: 4px; }
+        .btn-vid { background: #eff6ff; color: #2563eb; }
+        .btn-pdf { background: #fdf2f8; color: #db2777; }
 
-        .chapter-card { background: white; padding: 20px; border-radius: 18px; border: 1px solid #e2e8f0; position: relative; transition: 0.3s; }
-        .btn-group { display: flex; gap: 8px; margin-top: 15px; }
-        .btn { flex: 1; padding: 10px; text-align: center; text-decoration: none; border-radius: 10px; font-size: 0.85rem; font-weight: 700; }
-        .btn-v { background: #eff6ff; color: #2563eb; }
-        .btn-p { background: #fdf2f8; color: #db2777; }
-        .edit-badge { position: absolute; top: 12px; right: 12px; background: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: bold; }
+        .edit-badge { position: absolute; top: 12px; right: 12px; background: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; cursor: pointer; font-weight: bold; }
 
-        /* INFO CARD */
-        .help-anchor { position: fixed; bottom: 20px; left: 20px; z-index: 1100; }
-        .help-trigger { background: var(--primary-gradient); color: white; width: 50px; height: 50px; border-radius: 15px; display: flex; justify-content: center; align-items: center; font-size: 1.3rem; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        #info-card { display: none; position: absolute; bottom: 65px; left: 0; width: 280px; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        /* HELP SECTION */
+        .help-anchor { position: fixed; bottom: 25px; left: 25px; z-index: 999; }
+        .help-trigger { background: var(--primary-gradient); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.5rem; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        #info-card { display: none; position: absolute; bottom: 65px; left: 0; width: 280px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
         .card-header { background: var(--primary-gradient); padding: 20px; color: white; text-align: center; }
-        .profile-img { width: 80px; height: 80px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.4); margin-bottom: 10px; object-fit: cover; }
-        .soc-btn { display: block; flex: 1; padding: 10px; border-radius: 10px; text-decoration: none; color: white; font-weight: bold; font-size: 0.8rem; text-align: center; }
+        .profile-img { width: 80px; height: 80px; border-radius: 50%; border: 3px solid white; margin-bottom: 10px; }
 
-        /* MODALS */
-        .modal { display: none; position: fixed; inset:0; background:rgba(0,0,0,0.7); z-index: 1200; justify-content:center; align-items:center; padding: 20px; }
-        .modal-box { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; }
+        .modal { display: none; position: fixed; inset:0; background:rgba(0,0,0,0.7); z-index: 10001; justify-content:center; align-items:center; }
+        .modal-box { background: white; padding: 25px; border-radius: 20px; width: 95%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+        
+        .res-input-box { border: 1px dashed #6366f1; padding: 15px; border-radius: 12px; margin-top: 10px; }
+        .admin-tag { background: #eef2ff; color: #6366f1; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
 
-        /* MOBILE MENU OVERLAY */
-        @media (max-width: 768px) {
-            #mobile-nav { display: flex; }
-            .sidebar { position: fixed; left: -100%; top: 0; height: 100%; box-shadow: 10px 0 30px rgba(0,0,0,0.2); }
-            .sidebar.open { left: 0; }
-            .subject-link { padding: 15px; }
-        }
+        @media (max-width: 768px) { .sidebar { display: none; } }
     </style>
 </head>
-<body onclick="closeSidebar(event)">
+<body>
 
 <div id="gateway-screen">
     <div class="gateway-card">
-        <h1 style="font-family:'Dancing Script', cursive; font-size: 2.5rem; color: #4f46e5;">Tanjim</h1>
-        <p style="color:gray; margin-bottom:20px; font-weight: 600;">HSC Nexus V5.0 Mobile</p>
-        <button class="option-btn user-btn" onclick="openLogin('user')">📖 Student Login</button>
-        <button class="option-btn admin-btn-gate" onclick="openLogin('admin')">⚙️ Admin Control</button>
+        <h1 style="font-family:'Dancing Script', cursive; font-size: 3rem; color: #4f46e5;">Tanjim</h1>
+        <button class="option-btn" style="background:#f1f5f9; color:#4f46e5;" onclick="openLogin('user')">📖 Student Login</button>
+        <button class="option-btn" style="background:var(--primary-gradient); color:white;" onclick="openLogin('admin')">⚙️ Admin Control</button>
     </div>
 </div>
 
 <div id="login-popup">
     <div class="login-box">
-        <h2 id="login-title" style="margin-bottom:10px;">Login</h2>
-        <input type="text" id="login-user" placeholder="Phone Number" inputmode="tel">
+        <h2 id="login-title">Login</h2>
+        <input type="text" id="login-user" placeholder="Phone or Email">
         <input type="password" id="login-pass" placeholder="Password">
-        <button onclick="handleLogin()" style="width:100%; padding:14px; background:var(--primary-gradient); color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">Enter</button>
+        <button onclick="handleLogin()" style="width:100%; padding:14px; background:var(--primary-gradient); color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold; margin-top:10px;">Enter Dashboard</button>
+        <button onclick="document.getElementById('login-popup').style.display='none'" style="margin-top:10px; border:none; background:none; color:gray; cursor:pointer;">Cancel</button>
     </div>
 </div>
 
-<header id="mobile-nav">
-    <div class="menu-toggle" onclick="toggleSidebar(event)">☰</div>
-    <h2>Tanjim</h2>
-    <div style="width: 30px;"></div>
-</header>
-
 <div id="main-app">
-    <aside class="sidebar" id="sidebar">
-        <h2 onclick="toggleSidebar(event)">Tanjim</h2>
+    <div class="sidebar">
+        <h2>Tanjim</h2>
         <div id="subject-list" style="overflow-y:auto; flex:1;"></div>
-        <div id="admin-tools" style="display:none; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1); margin-bottom:15px;">
-            <button onclick="openManager()" style="width:100%; padding:12px; background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:12px;">Manager</button>
+        <div id="admin-tools" style="display: none; padding-top: 10px; border-top: 1px solid #ffffff20;">
+            <button onclick="openManager()" style="width:100%; padding:12px; background:#ffffff15; color:white; border-radius:12px; border:1px solid #ffffff30; margin-bottom:10px; cursor:pointer; font-weight:bold;">⚙️ Manager Panel</button>
         </div>
-        <button onclick="location.reload()" style="padding:12px; background:#ef4444; color:white; border:none; border-radius:12px; font-weight:bold;">Logout</button>
-    </aside>
+        <button onclick="location.reload()" style="padding:12px; background:#ef4444; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold;">Logout</button>
+    </div>
 
-    <main class="main-content">
+    <div class="main-content">
         <div class="header-section">
-            <h1 id="subject-title" style="font-size: 1.4rem;">Subject</h1>
-            <button id="add-btn" style="display:none; padding:10px 18px; background:#10b981; color:white; border:none; border-radius:10px; font-weight:bold;" onclick="openEditor(null)">+ Add</button>
+            <h1 id="subject-title">Subject</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div id="edit-mode-ui" style="display: none; background: white; padding: 8px 15px; border-radius: 12px; border: 1px solid #ddd;">
+                    <label style="font-size: 0.85rem; font-weight: bold; color: #6366f1;">Edit Mode</label>
+                    <input type="checkbox" id="edit-check" onchange="renderContent()" style="cursor:pointer; margin-left:5px;">
+                </div>
+                <button id="add-btn" style="display:none; padding:10px 20px; background:#10b981; color:white; border:none; border-radius:10px; cursor:pointer; font-weight:bold;" onclick="openEditor(null)">+ Add Chapter</button>
+            </div>
         </div>
         <div class="chapter-grid" id="chapter-display"></div>
-    </main>
+    </div>
 </div>
 
 <div class="help-anchor">
     <div id="info-card">
         <div class="card-header">
-            <img src="https://riachattanjim.github.io/academic-nexus/photo_2025-12-25_20-00-31.jpg" alt="Profile" class="profile-img" onerror="this.src='https://ui-avatars.com/api/?name=Tanjim'">
-            <h3 style="font-size:1.1rem;">Riachat Tanjim Omar</h3>
-            <p style="font-size:0.75rem; opacity:0.8;">Developer & Student</p>
+            <img src="https://riachattanjim.github.io/academic-nexus/photo_2025-12-25_20-00-31.jpg" alt="Tanjim" class="profile-img" onerror="this.src='https://ui-avatars.com/api/?name=Tanjim'">
+            <h3>Riachat Tanjim Omar</h3>
+            <p>HSC 26 | Lakshmipur Govt College</p>
         </div>
-        <div class="card-body">
-            <p style="font-size:0.85rem; color:#475569; margin-bottom:15px;">
-                Class: 12th (HSC 26)<br>Lakshmipur Govt College
-            </p>
-            <div style="display:flex; gap:10px;">
-                <a href="https://www.facebook.com/riachattanjim" target="_blank" class="soc-btn" style="background:#1877F2;">Facebook</a>
-                <a href="https://wa.me/qr/LCKHEWYQZPCUD1" target="_blank" class="soc-btn" style="background:#25D366;">WhatsApp</a>
-            </div>
+        <div style="padding: 15px; text-align: center;">
+            <a href="https://wa.me/qr/LCKHEWYQZPCUD1" target="_blank" style="color:#25d366; text-decoration:none; font-weight:bold;">WhatsApp</a> | 
+            <a href="https://facebook.com/riachattanjim" target="_blank" style="color:#1877f2; text-decoration:none; font-weight:bold;">Facebook</a>
         </div>
     </div>
-    <div class="help-trigger" onclick="toggleInfo(event)">💡</div>
+    <div class="help-trigger" onclick="toggleInfo()">💡</div>
 </div>
 
 <div id="manager-modal" class="modal" onclick="if(event.target==this)this.style.display='none'">
     <div class="modal-box">
-        <h3>Manager Panel</h3>
-        <div id="password-change-section" style="display:none; margin-top: 10px;">
-            <input type="text" id="new-admin-pass" placeholder="Admin Secret Pass" style="width:100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:10px;">
-            <button onclick="updateAdminPass()" style="width:100%; padding:10px; background:#6366f1; color:white; border:none; border-radius:10px;">Save Secret Pass</button>
+        <h3 style="margin-bottom:15px; color:#1e293b;">Access Manager</h3>
+        
+        <div id="main-admin-section" style="display:none; border-bottom: 2px solid #eee; margin-bottom: 20px; padding-bottom: 15px;">
+            <h4 style="color:#6366f1; margin-bottom:10px;">Admin Management</h4>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <input type="text" id="adm-u" placeholder="Admin Email/Phone" style="padding:10px; border:1px solid #ddd; border-radius:10px;">
+                <input type="text" id="adm-p" placeholder="Admin Password" style="padding:10px; border:1px solid #ddd; border-radius:10px;">
+                <button onclick="manageAccess('admin', 'add')" style="background:#6366f1; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">Add New Admin</button>
+            </div>
+            <div id="admin-list-ui" style="margin-top:10px; max-height:100px; overflow-y:auto;"></div>
         </div>
-        <h4 style="margin:15px 0 10px;">Student List</h4>
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
-            <input type="text" id="new-u" placeholder="Phone" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
-            <input type="text" id="new-p" placeholder="Pass" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
-            <button onclick="addStudent()" style="background:#10b981; color:white; border:none; padding:10px; border-radius:10px;">+</button>
+
+        <h4 style="margin-bottom:10px; color:#10b981;">Student Management</h4>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;">
+            <input type="text" id="stu-u" placeholder="Student Phone" style="padding:10px; border:1px solid #ddd; border-radius:10px;">
+            <input type="text" id="stu-p" placeholder="Student Password" style="padding:10px; border:1px solid #ddd; border-radius:10px;">
+            <button onclick="manageAccess('student', 'add')" style="background:#10b981; color:white; border:none; padding:12px; border-radius:10px; font-weight:bold;">Add New Student</button>
         </div>
-        <div id="student-list" style="max-height:150px; overflow-y:auto;"></div>
+        <div id="student-list-ui" style="max-height:200px; overflow-y:auto;"></div>
     </div>
 </div>
 
 <div id="editor-modal" class="modal">
     <div class="modal-box">
-        <h3>Edit Resource</h3>
+        <h3 id="edit-title">Manage Resources</h3>
         <input type="hidden" id="edit-idx">
-        <input type="text" id="inp-n" placeholder="Chapter Name" style="width:100%; padding:12px; margin:10px 0; border:1px solid #ddd; border-radius:10px;">
-        <input type="text" id="inp-v" placeholder="Video Link" style="width:100%; padding:12px; margin-bottom:10px; border:1px solid #ddd; border-radius:10px;">
-        <input type="text" id="inp-p" placeholder="PDF Link" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid #ddd; border-radius:10px;">
-        <div style="display:flex; gap:10px;">
-            <button onclick="saveChapter()" style="flex:2; padding:12px; background:var(--primary-gradient); color:white; border:none; border-radius:12px; font-weight:bold;">Update</button>
-            <button onclick="document.getElementById('editor-modal').style.display='none'" style="flex:1; padding:12px; border-radius:12px; background:#f1f5f9;">X</button>
+        <input type="text" id="ch-name" placeholder="Chapter Name" style="width:100%; padding:12px; margin:15px 0 10px; border:1px solid #ddd; border-radius:12px;">
+        
+        <div class="res-input-box">
+            <h5 style="color:#6366f1; margin-bottom:10px;">Add New Resource (Video/PDF)</h5>
+            <input type="text" id="res-label" placeholder="Resource Title (e.g. Class 1 / Notes)" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:8px;">
+            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                <input type="text" id="res-vid" placeholder="Video Link (YouTube/Drive)" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
+                <input type="text" id="res-pdf" placeholder="PDF/Note Link" style="flex:1; padding:10px; border:1px solid #ddd; border-radius:10px;">
+            </div>
+            <button onclick="addResourceRow()" style="width:100%; padding:10px; background:#6366f1; color:white; border:none; border-radius:10px; font-weight:bold;">+ Add to Chapter</button>
+        </div>
+        
+        <div id="res-list-edit-ui" style="margin-top:15px; max-height:200px; overflow-y:auto; border:1px dashed #ccc; padding:10px; border-radius:10px;"></div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="saveChapter()" style="flex:2; padding:14px; background:var(--primary-gradient); color:white; border:none; border-radius:12px; font-weight:bold;">Save Changes</button>
+            <button onclick="document.getElementById('editor-modal').style.display='none'" style="flex:1; padding:14px; border:none; border-radius:12px; background:#f1f5f9; color:#64748b;">Cancel</button>
         </div>
     </div>
 </div>
 
 <script>
-    let isAdmin = false, isMainAdmin = false, currentSub = 'p1', loginMode = 'user';
-    const admins = [{u:"01866280090",p:"meherajwafi"}, {u:"01874816789",p:"TANJIMRIACHAT@"}, {u:"01847757205",p:"MFT28"}];
-    let settings = JSON.parse(localStorage.getItem('nexusSetV5')) || { students: [{u:"01874816789",p:"tanjim@"}] };
-    const defaultData = {
-        p1: ["ভৌত জগৎ ও পরিমাপ", "ভেক্টর", "গতিবিদ্যা", "নিউটনীয় বলবিদ্যা", "কাজ শক্তি", "মহাকর্ষ", "গাঠনিক ধর্ম", "পর্যাবৃত্ত গতি", "তরঙ্গ", "আদর্শ গ্যাস"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        p2: ["তাপগতিবিদ্যা", "স্থির তড়িৎ", "চল তড়িৎ", "চৌম্বক ক্রিয়া", "তাড়িতচৌম্বক আবেশ", "ভৌত আলোকবিজ্ঞান", "আধুনিক পদার্থবিজ্ঞান", "পরমাণু", "সেমিকন্ডাক্টর"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        c1: ["ল্যাবরেটরি", "গুণগত রসায়ন", "পর্যায়বৃত্ত ধর্ম", "রাসায়নিক পরিবর্তন", "কর্মমুখী রসায়ন"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        c2: ["পরিবেশ রসায়ন", "জৈব রসায়ন", "পরিমাণগত রসায়ন", "তড়িৎ রসায়ন", "অর্থনৈতিক রসায়ন"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        b1: ["কোষ", "কোষ বিভাজন", "অণুজীব", "শৈবাল", "টিস্যু", "উদ্ভিদ শরীরতত্ত্ব", "প্রজনন", "জীবপ্রযুক্তি"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        b2: ["প্রাণীর পরিচিতি", "পরিপাক", "রক্ত", "শ্বসন", "নিষ্কাশন", "চলন", "সমন্বয়", "জিনতত্ত্ব"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        m1: ["ম্যাট্রিক্স", "ভেক্টর", "সরলরেখা", "বৃত্ত", "বিন্যাস", "ত্রিকোণমিতি", "অন্তরীকরণ", "যোগজীকরণ"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        m2: ["জটিল সংখ্যা", "বহুপদী", "দ্বিপদী", "কণিক", "বিপরীত ত্রিকোণমিতি", "স্থিতিবিদ্যা", "গতিবিদ্যা", "সম্ভাবনা"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        ict: ["বিশ্ব ও বাংলাদেশ", "নেটওয়ার্কিং", "সংখ্যা পদ্ধতি", "HTML", "প্রোগ্রামিং", "ডেটাবেজ"].map(n => ({name: n, vid: "#", pdf: "#"})),
-        lan: ["Bangla 1st", "Bangla 2nd", "English 1st", "English 2nd"].map(n => ({name: n, vid: "#", pdf: "#"}))
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyB5q1Uw6zFMOlw4NFgiSEiN8DyMBqWuGE0",
+        authDomain: "tanjim-nexus.firebaseapp.com",
+        databaseURL: "https://tanjim-nexus-default-rtdb.firebaseio.com",
+        projectId: "tanjim-nexus",
+        storageBucket: "tanjim-nexus.firebasestorage.app",
+        messagingSenderId: "991593183242",
+        appId: "1:991593183242:web:5426343764e1a59964c7f3"
     };
-    let masterData = JSON.parse(localStorage.getItem('nexusDataV5')) || defaultData;
-    const subNames = {p1:"Physics 1st", p2:"Physics 2nd", c1:"Chem 1st", c2:"Chem 2nd", b1:"Bio 1st", b2:"Bio 2nd", m1:"Math 1st", m2:"Math 2nd", ict:"ICT", lan:"Languages"};
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    let isAdmin = false, isMainAdmin = false, currentSub = 'p1', masterData = {}, tempResources = [];
+    const mainAdminEmail = "tanjimriachat@gmail.com";
+
+    // Static Admin List as fallback
+    const coreAdmins = [
+        {u: "01866280090", p: "meherajwafi"},
+        {u: "01874816789", p: "TANJIMRIACHAT@"},
+        {u: "01847757205", p: "MFT28"}
+    ];
 
     function openLogin(m) { loginMode = m; document.getElementById('login-popup').style.display = 'flex'; }
+
     function handleLogin() {
-        const u = document.getElementById('login-user').value, p = document.getElementById('login-pass').value;
-        const foundAdmin = admins.find(a => a.u === u && a.p === p);
-        if(foundAdmin) {
-            isAdmin = true; if(u === "01874816789") isMainAdmin = true;
-            startApp(); return;
-        }
-        if(loginMode === 'user' && settings.students.find(s => s.u === u && s.p === p)) { isAdmin = false; isMainAdmin = false; startApp(); }
-        else alert("Wrong Credentials!");
+        let u = document.getElementById('login-user').value.trim();
+        let p = document.getElementById('login-pass').value;
+
+        // Auto-convert phone to email for main admin
+        if(u === "01874816789") u = mainAdminEmail;
+
+        auth.signInWithEmailAndPassword(u, p).then((res) => {
+            isAdmin = true;
+            if(res.user.email === mainAdminEmail) isMainAdmin = true;
+            startApp();
+        }).catch(() => {
+            // Check Extra Admins and Students from DB
+            db.ref('access').once('value', s => {
+                const data = s.val() || {admins: {}, students: {}};
+                let userFound = false;
+                
+                // Check Admins
+                Object.values(data.admins).forEach(a => { if(a.u === u && a.p === p) { isAdmin = true; userFound = true; }});
+                // Check Students
+                Object.values(data.students).forEach(s => { if(s.u === u && s.p === p) { isAdmin = false; userFound = true; }});
+                // Check Static List
+                coreAdmins.forEach(a => { if(a.u === u && a.p === p) { isAdmin = true; userFound = true; if(u === "01874816789") isMainAdmin = true; }});
+
+                if(userFound) startApp(); else alert("Login Failed! Check credentials.");
+            });
+        });
     }
+
     function startApp() {
         document.getElementById('gateway-screen').style.display = 'none';
         document.getElementById('login-popup').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
-        if(isAdmin) { document.getElementById('add-btn').style.display = 'block'; document.getElementById('admin-tools').style.display = 'block';
-            if(isMainAdmin) document.getElementById('password-change-section').style.display = 'block';
+        
+        if(isAdmin) {
+            document.getElementById('admin-tools').style.display = 'block';
+            document.getElementById('edit-mode-ui').style.display = 'block';
+            if(isMainAdmin) document.getElementById('main-admin-section').style.display = 'block';
         }
-        renderSidebar(); renderContent();
+        
+        db.ref('academyData').on('value', s => { masterData = s.val() || {}; renderSidebar(); renderContent(); });
     }
+
     function renderSidebar() {
+        const subNames = { p1: "Physics 1st", p2: "Physics 2nd", c1: "Chem 1st", c2: "Chem 2nd", b1: "Bio 1st", b2: "Bio 2nd", m1: "Math 1st", m2: "Math 2nd", ict: "ICT", lan: "Languages" };
         const list = document.getElementById('subject-list'); list.innerHTML = '';
         Object.keys(subNames).forEach(k => {
-            const div = document.createElement('div');
-            div.className = `subject-link ${currentSub === k ? 'active' : ''}`;
-            div.innerHTML = `${subNames[k]} <span>▶</span>`;
-            div.onclick = (e) => { currentSub = k; renderSidebar(); renderContent(); if(window.innerWidth <= 768) toggleSidebar(e); };
-            list.appendChild(div);
+            const d = document.createElement('div');
+            d.className = `subject-link ${currentSub === k ? 'active' : ''}`;
+            d.innerHTML = subNames[k];
+            d.onclick = () => { currentSub = k; renderSidebar(); renderContent(); };
+            list.appendChild(d);
         });
     }
+
     function renderContent() {
-        document.getElementById('subject-title').innerText = subNames[currentSub];
+        const editEnabled = document.getElementById('edit-check').checked;
+        document.getElementById('add-btn').style.display = (isAdmin && editEnabled) ? 'block' : 'none';
         const display = document.getElementById('chapter-display'); display.innerHTML = '';
-        masterData[currentSub].forEach((ch, idx) => {
+        
+        (masterData[currentSub] || []).forEach((ch, idx) => {
             const card = document.createElement('div'); card.className = 'chapter-card';
-            card.innerHTML = `${isAdmin ? `<div class="edit-badge" onclick="openEditor(${idx})">✏️ EDIT</div>` : ''}
-                <h3>${ch.name}</h3><div class="btn-group"><a href="${ch.vid}" target="_blank" class="btn btn-v">🎬 Class</a>
-                <a href="${ch.pdf}" target="_blank" class="btn btn-p">📄 Notes</a></div>`;
+            let resHTML = '';
+            (ch.resources || []).forEach(r => {
+                resHTML += `<div class="resource-item">
+                    <span style="font-size:0.9rem; font-weight:700; color:#1e293b;">${r.label}</span>
+                    <div class="res-actions">
+                        ${r.vid ? `<a href="${r.vid}" target="_blank" class="res-btn btn-vid">🎬 Class</a>` : ''}
+                        ${r.pdf ? `<a href="${r.pdf}" target="_blank" class="res-btn btn-pdf">📄 Notes</a>` : ''}
+                    </div>
+                </div>`;
+            });
+            card.innerHTML = `${(isAdmin && editEnabled)?`<div class="edit-badge" onclick="openEditor(${idx})">✏️ EDIT</div>`:''}
+                <h2 style="font-size:1.3rem; margin-bottom:15px; color:#1e293b; border-bottom:2px solid #f1f5f9; padding-bottom:10px;">${ch.name}</h2>${resHTML}`;
             display.appendChild(card);
         });
     }
-    function toggleSidebar(e) { e.stopPropagation(); document.getElementById('sidebar').classList.toggle('open'); }
-    function closeSidebar(e) { if(window.innerWidth <= 768 && !document.getElementById('sidebar').contains(e.target)) document.getElementById('sidebar').classList.remove('open'); }
-    function toggleInfo(e) { e.stopPropagation(); const c = document.getElementById('info-card'); c.style.display = c.style.display === 'block' ? 'none' : 'block'; }
-    function openManager() { document.getElementById('manager-modal').style.display = 'flex'; renderStudents(); }
-    function renderStudents() {
-        const list = document.getElementById('student-list'); list.innerHTML = '';
-        settings.students.forEach((s, i) => {
-            list.innerHTML += `<div style="display:flex; justify-content:space-between; background:#f8fafc; padding:10px; margin-top:5px; border-radius:10px; font-size:0.85rem;">
-                <span>👤 ${s.u}</span><button onclick="delStud(${i})" style="color:red;border:none;background:none;font-weight:bold;">X</button></div>`;
+
+    // CHAPTER EDITOR
+    function addResourceRow() {
+        const label = document.getElementById('res-label').value, vid = document.getElementById('res-vid').value, pdf = document.getElementById('res-pdf').value;
+        if(label && (vid || pdf)) {
+            tempResources.push({label, vid, pdf});
+            document.getElementById('res-label').value = ''; document.getElementById('res-vid').value = ''; document.getElementById('res-pdf').value = '';
+            renderTempResources();
+        }
+    }
+
+    function renderTempResources() {
+        const ui = document.getElementById('res-list-edit-ui'); ui.innerHTML = '';
+        tempResources.forEach((r, i) => {
+            ui.innerHTML += `<div style="background:#f1f5f9; padding:10px; border-radius:10px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:0.85rem; font-weight:bold;">${r.label}</span>
+                <button onclick="tempResources.splice(${i},1);renderTempResources()" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">✖</button>
+            </div>`;
         });
     }
-    function addStudent() { const u = document.getElementById('new-u').value, p = document.getElementById('new-p').value; if(u && p) { settings.students.push({u,p}); localStorage.setItem('nexusSetV5', JSON.stringify(settings)); renderStudents(); } }
-    function delStud(i) { if(confirm("Delete Student?")){ settings.students.splice(i,1); localStorage.setItem('nexusSetV5', JSON.stringify(settings)); renderStudents(); } }
+
     function openEditor(idx) {
-        document.getElementById('editor-modal').style.display = 'flex'; document.getElementById('edit-idx').value = idx;
-        if(idx !== null) { const d = masterData[currentSub][idx]; document.getElementById('inp-n').value = d.name; document.getElementById('inp-v').value = d.vid; document.getElementById('inp-p').value = d.pdf; }
-        else { document.getElementById('inp-n').value = ''; document.getElementById('inp-v').value = ''; document.getElementById('inp-p').value = ''; }
+        document.getElementById('editor-modal').style.display = 'flex';
+        document.getElementById('edit-idx').value = idx;
+        if(idx !== null) {
+            const d = masterData[currentSub][idx];
+            document.getElementById('ch-name').value = d.name;
+            tempResources = [...(d.resources || [])];
+        } else {
+            document.getElementById('ch-name').value = ''; tempResources = [];
+        }
+        renderTempResources();
     }
+
     function saveChapter() {
-        const idx = document.getElementById('edit-idx').value, d = { name: document.getElementById('inp-n').value, vid: document.getElementById('inp-v').value, pdf: document.getElementById('inp-p').value };
-        if(idx !== "") masterData[currentSub][idx] = d; else masterData[currentSub].push(d);
-        localStorage.setItem('nexusDataV5', JSON.stringify(masterData)); document.getElementById('editor-modal').style.display = 'none'; renderContent();
+        const idx = document.getElementById('edit-idx').value, name = document.getElementById('ch-name').value;
+        if(!masterData[currentSub]) masterData[currentSub] = [];
+        const chData = {name, resources: tempResources};
+        if(idx !== "") masterData[currentSub][idx] = chData; else masterData[currentSub].push(chData);
+        db.ref('academyData').set(masterData).then(() => document.getElementById('editor-modal').style.display='none');
     }
+
+    // ACCESS MANAGER
+    function openManager() { document.getElementById('manager-modal').style.display = 'flex'; loadAccessList(); }
+
+    function loadAccessList() {
+        db.ref('access').on('value', s => {
+            const data = s.val() || {admins: {}, students: {}};
+            
+            // Render Students
+            const stuUI = document.getElementById('student-list-ui'); stuUI.innerHTML = '';
+            Object.keys(data.students).forEach(k => {
+                const s = data.students[k];
+                stuUI.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; background:#f0fdf4; margin-bottom:5px; border-radius:10px; align-items:center;">
+                    <span style="font-size:0.85rem;">👤 <b>${s.u}</b> (P: ${s.p})</span>
+                    <button onclick="manageAccess('student', 'del', '${k}')" style="color:red; border:none; background:none; font-weight:bold; cursor:pointer;">Del</button>
+                </div>`;
+            });
+
+            // Render Extra Admins (Main Admin Only)
+            if(isMainAdmin) {
+                const admUI = document.getElementById('admin-list-ui'); admUI.innerHTML = '';
+                Object.keys(data.admins).forEach(k => {
+                    const a = data.admins[k];
+                    admUI.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; background:#eef2ff; margin-bottom:5px; border-radius:10px; align-items:center;">
+                        <span style="font-size:0.85rem;">⚙️ <b>${a.u}</b> <span class="admin-tag">ADMIN</span></span>
+                        <button onclick="manageAccess('admin', 'del', '${k}')" style="color:red; border:none; background:none; font-weight:bold; cursor:pointer;">Remove</button>
+                    </div>`;
+                });
+            }
+        });
+    }
+
+    function manageAccess(type, action, key = null) {
+        if(action === 'add') {
+            const u = document.getElementById(type === 'student' ? 'stu-u' : 'adm-u').value.trim();
+            const p = document.getElementById(type === 'student' ? 'stu-p' : 'adm-p').value.trim();
+            if(u && p) {
+                db.ref(`access/${type}s`).push({u, p}).then(() => {
+                    document.getElementById(type === 'student' ? 'stu-u' : 'adm-u').value = '';
+                    document.getElementById(type === 'student' ? 'stu-p' : 'adm-p').value = '';
+                });
+            }
+        } else if(action === 'del') {
+            if(confirm(`Remove this ${type}?`)) db.ref(`access/${type}s`).child(key).remove();
+        }
+    }
+
+    function toggleInfo() { const c = document.getElementById('info-card'); c.style.display = c.style.display === 'block' ? 'none' : 'block'; }
     window.onclick = function(e) { if(!e.target.closest('.help-anchor')) document.getElementById('info-card').style.display = 'none'; }
 </script>
 </body>
