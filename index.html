@@ -17,23 +17,27 @@
 
         #gateway-screen { position: fixed; inset: 0; background: var(--primary-gradient); display: flex; justify-content: center; align-items: center; z-index: 9999; }
         .gateway-card { background: white; padding: 40px; border-radius: 30px; text-align: center; width: 90%; max-width: 450px; }
-        .option-btn { display: block; width: 100%; padding: 18px; margin: 15px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .option-btn { display: block; width: 100%; padding: 18px; margin: 15px 0; border: none; border-radius: 12px; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
 
         #login-popup { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; justify-content: center; align-items: center; }
         .login-box { background: white; padding: 30px; border-radius: 20px; width: 320px; text-align: center; }
-        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; font-size: 1rem; }
+        .login-box input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; }
 
         #main-app { display: none; height: 100vh; width: 100%; display: flex; position: relative; }
         
+        /* SIDEBAR WITH MOBILE FIX */
         .sidebar { width: 280px; background: var(--sidebar-bg); color: #f8fafc; display: flex; flex-direction: column; padding: 25px 20px; transition: 0.3s; z-index: 1000; }
-        .sidebar h2 { font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 30px; text-align: center; color: #a855f7; }
+        .sidebar h2 { font-family: 'Dancing Script', cursive; font-size: 2.5rem; margin-bottom: 20px; text-align: center; color: #a855f7; }
         .subject-link { padding: 12px 15px; margin-bottom: 5px; border-radius: 12px; cursor: pointer; font-size: 0.95rem; }
         .subject-link.active { background: var(--primary-gradient); color: white; }
+
+        /* MOBILE CLOSE BUTTON */
+        #close-sidebar { display: none; position: absolute; top: 15px; right: 15px; background: none; border: none; color: white; font-size: 1.8rem; cursor: pointer; }
 
         .main-content { flex: 1; padding: 20px; overflow-y: auto; background: #f1f5f9; position: relative; }
         .header-section { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         
-        #menu-toggle { display: none; background: var(--primary-gradient); color: white; border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 10px; }
+        #menu-toggle { display: none; background: var(--primary-gradient); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-right: 10px; }
 
         .chapter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
         .chapter-card { background: white; padding: 24px; border-radius: 20px; border: 1px solid #e2e8f0; position: relative; }
@@ -46,18 +50,22 @@
 
         .edit-badge { position: absolute; top: 12px; right: 12px; background: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.65rem; cursor: pointer; font-weight: bold; }
 
-        .help-anchor { position: fixed; bottom: 20px; left: 20px; z-index: 999; }
+        /* OVERLAY FOR MOBILE */
+        #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
+
+        .help-anchor { position: fixed; bottom: 20px; left: 20px; z-index: 998; }
         .help-trigger { background: var(--primary-gradient); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.5rem; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         #info-card { display: none; position: absolute; bottom: 65px; left: 0; width: 280px; background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
-        .card-header { background: var(--primary-gradient); padding: 20px; color: white; text-align: center; }
 
         .modal { display: none; position: fixed; inset:0; background:rgba(0,0,0,0.7); z-index: 10001; justify-content:center; align-items:center; }
         .modal-box { background: white; padding: 25px; border-radius: 20px; width: 95%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
 
         @media (max-width: 768px) {
             #menu-toggle { display: block; }
-            .sidebar { position: absolute; left: -280px; height: 100%; }
+            .sidebar { position: fixed; left: -280px; height: 100%; width: 260px; }
             .sidebar.active { left: 0; }
+            #close-sidebar { display: block; }
+            #sidebar-overlay.active { display: block; }
         }
     </style>
 </head>
@@ -81,8 +89,11 @@
     </div>
 </div>
 
+<div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
 <div id="main-app">
     <div class="sidebar" id="sidebar-main">
+        <button id="close-sidebar" onclick="toggleSidebar()">✖</button>
         <h2>Tanjim</h2>
         <div id="subject-list" style="overflow-y:auto; flex:1;"></div>
         <div id="admin-tools" style="display: none; padding-top: 10px; border-top: 1px solid #ffffff20;">
@@ -111,7 +122,7 @@
 
 <div class="help-anchor">
     <div id="info-card">
-        <div class="card-header"><h3>Riachat Tanjim Omar</h3><p>HSC 26 | LGC</p></div>
+        <div class="card-header"><h3 style="margin-bottom:5px;">Riachat Tanjim Omar</h3><p>HSC 26 | LGC</p></div>
         <div style="padding: 15px; text-align: center;">
             <a href="https://wa.me/qr/LCKHEWYQZPCUD1" target="_blank" style="color:#25d366; text-decoration:none; font-weight:bold;">WhatsApp</a> | 
             <a href="https://facebook.com/riachattanjim" target="_blank" style="color:#1877f2; text-decoration:none; font-weight:bold;">Facebook</a>
@@ -128,13 +139,12 @@
             <input type="text" id="adm-u" placeholder="Admin Email/Phone" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:5px;">
             <input type="text" id="adm-p" placeholder="Admin Password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
             <button onclick="manageAccess('admin', 'add')" style="width:100%; background:#6366f1; color:white; padding:12px; border:none; border-radius:10px; font-weight:bold;">Add Admin</button>
-            <div id="admin-list-ui"></div>
         </div>
         <h4 style="color:#10b981; margin-bottom:10px;">Student Access</h4>
         <input type="text" id="stu-u" placeholder="Student Phone" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:5px;">
         <input type="text" id="stu-p" placeholder="Student Password" style="width:100%; padding:10px; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
         <button onclick="manageAccess('student', 'add')" style="width:100%; background:#10b981; color:white; padding:12px; border:none; border-radius:10px; font-weight:bold;">Add Student</button>
-        <div id="student-list-ui"></div>
+        <div id="student-list-ui" style="margin-top:10px;"></div>
     </div>
 </div>
 
@@ -170,30 +180,27 @@
 
     let isAdmin = false, isMainAdmin = false, currentSub = 'p1', masterData = {}, tempResources = [];
     const mainAdminEmail = "tanjimriachat@gmail.com";
+    const coreAdmins = [{u: "01866280090", p: "meherajwafi"}, {u: "01874816789", p: "TANJIMRIACHAT@"}, {u: "01847757205", p: "MFT28"}];
 
-    function toggleSidebar() { document.getElementById('sidebar-main').classList.toggle('active'); }
+    // MOBILE SIDEBAR LOGIC
+    function toggleSidebar() { 
+        document.getElementById('sidebar-main').classList.toggle('active'); 
+        document.getElementById('sidebar-overlay').classList.toggle('active');
+    }
+
     function toggleInfo() { const c = document.getElementById('info-card'); c.style.display = c.style.display === 'block' ? 'none' : 'block'; }
     function openLogin(m) { document.getElementById('login-popup').style.display = 'flex'; }
 
     function handleLogin() {
         const btn = document.getElementById('login-btn-final');
         btn.innerText = "Checking..."; btn.disabled = true;
+        let u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pass').value;
 
-        let u = document.getElementById('login-user').value.trim();
-        let p = document.getElementById('login-pass').value;
+        if(u === "01874816789") { isAdmin=true; isMainAdmin=true; startApp(); return; }
+        if((u === "01866280090" && p === "meherajwafi") || (u === "01847757205" && p === "MFT28")) { isAdmin=true; startApp(); return; }
 
-        if(u === "01874816789") u = mainAdminEmail;
-
-        // Fast Login Logic
-        if(u === mainAdminEmail && p === "TANJIMRIACHAT@") {
-            isAdmin = true; isMainAdmin = true; startApp(); return;
-        }
-        if((u === "01866280090" && p === "meherajwafi") || (u === "01847757205" && p === "MFT28")) {
-            isAdmin = true; startApp(); return;
-        }
-
-        auth.signInWithEmailAndPassword(u, p).then(() => {
-            isAdmin = true; if(u === mainAdminEmail) isMainAdmin = true; startApp();
+        auth.signInWithEmailAndPassword(u === "01874816789" ? mainAdminEmail : u, p).then(() => {
+            isAdmin = true; if(u === "01874816789") isMainAdmin = true; startApp();
         }).catch(() => {
             db.ref('access').once('value', s => {
                 const data = s.val() || {admins:{}, students:{}};
@@ -209,7 +216,7 @@
         document.getElementById('gateway-screen').style.display = 'none';
         document.getElementById('login-popup').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
-        if(isAdmin) {
+        if(isAdmin) { 
             document.getElementById('admin-tools').style.display = 'block';
             document.getElementById('edit-mode-ui').style.display = 'block';
             if(isMainAdmin) document.getElementById('main-admin-section').style.display = 'block';
@@ -272,10 +279,10 @@
         db.ref('access').on('value', s => {
             const data = s.val() || {admins:{}, students:{}};
             const stuUI = document.getElementById('student-list-ui'); stuUI.innerHTML = '';
-            Object.keys(data.students).forEach(k => { stuUI.innerHTML += `<div>${data.students[k].u} <button onclick="manageAccess('student','del','${k}')">Del</button></div>`; });
+            Object.keys(data.students).forEach(k => { stuUI.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; background:#f0fdf4; margin:2px;"><span>${data.students[k].u}</span><button onclick="manageAccess('student','del','${k}')" style="color:red; border:none; background:none;">Del</button></div>`; });
             if(isMainAdmin) {
                 const admUI = document.getElementById('admin-list-ui'); admUI.innerHTML = '';
-                Object.keys(data.admins).forEach(k => { admUI.innerHTML += `<div>${data.admins[k].u} <button onclick="manageAccess('admin','del','${k}')">Del</button></div>`; });
+                Object.keys(data.admins).forEach(k => { admUI.innerHTML += `<div style="display:flex; justify-content:space-between; padding:5px; background:#eef2ff; margin:2px;"><span>${data.admins[k].u}</span><button onclick="manageAccess('admin','del','${k}')" style="color:red; border:none; background:none;">Del</button></div>`; });
             }
         });
     }
