@@ -51,7 +51,6 @@
 
         #sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 999; }
 
-        /* Help Info Card Enhanced */
         .help-anchor { position: fixed; bottom: 20px; left: 20px; z-index: 998; }
         .help-trigger { background: var(--primary-gradient); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; font-size: 1.5rem; box-shadow: 0 10px 20px rgba(0,0,0,0.2); transition: 0.3s; }
         .help-trigger:hover { transform: scale(1.1) rotate(10deg); }
@@ -192,6 +191,7 @@
     const db = firebase.database();
 
     let isAdmin = false, isMainAdmin = false, currentSub = 'p1', masterData = {}, tempResources = [];
+    // Static core admins
     const coreAdmins = [{u: "01866280090", p: "meherajwafi"}, {u: "01874816789", p: "TANJIMRIACHAT@"}, {u: "01847757205", p: "MFT28"}];
 
     function toggleSidebar() { 
@@ -206,7 +206,11 @@
         btn.innerText = "Authenticating..."; btn.disabled = true;
         let u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pass').value;
 
-        // 1. Static Core Admins
+        // Reset permissions before check
+        isAdmin = false;
+        isMainAdmin = false;
+
+        // 1. Check Static Core Admins
         let staticMatch = coreAdmins.find(a => a.u === u && a.p === p);
         if (staticMatch) {
             isAdmin = true; 
@@ -214,20 +218,35 @@
             startApp(); return;
         }
 
-        // 2. Database Check
+        // 2. Check Database for Admins or Students
         db.ref('access').once('value').then(s => {
             const data = s.val() || {admins:{}, students:{}};
             let found = false;
             
-            // Check Database Admins - FIXED: giving full permission to added admins
-            Object.values(data.admins || {}).forEach(a => { if(a.u===u && a.p===p) { isAdmin=true; found=true; }});
+            // Check Database Admins - FIXED PERMISSION
+            if(data.admins) {
+                Object.values(data.admins).forEach(a => { 
+                    if(a.u === u && a.p === p) { 
+                        isAdmin = true; // Sets true for all database admins
+                        found = true; 
+                    }
+                });
+            }
+            
             // Check Database Students
-            Object.values(data.students || {}).forEach(s => { if(s.u===u && s.p===p) { isAdmin=false; found=true; }});
+            if(!found && data.students) {
+                Object.values(data.students).forEach(s => { 
+                    if(s.u === u && s.p === p) { 
+                        isAdmin = false; 
+                        found = true; 
+                    }
+                });
+            }
 
             if(found) {
                 startApp();
             } else {
-                alert("Incorrect credentials! Please contact admin.");
+                alert("Incorrect credentials!");
                 btn.innerText = "Enter Dashboard"; btn.disabled = false;
             }
         }).catch(err => {
@@ -241,17 +260,20 @@
         document.getElementById('login-popup').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
         
+        // Admin UI Visibility
         if(isAdmin) { 
             document.getElementById('admin-tools').style.display = 'block';
             document.getElementById('edit-mode-ui').style.display = 'block';
             if(isMainAdmin) document.getElementById('main-admin-section').style.display = 'block';
+        } else {
+            document.getElementById('admin-tools').style.display = 'none';
+            document.getElementById('edit-mode-ui').style.display = 'none';
         }
 
-        // REAL-TIME DATA SYNC - FIXED: ensures all devices see changes instantly
         db.ref('academyData').on('value', s => { 
             masterData = s.val() || {}; 
-            renderContent(); 
             renderSidebar();
+            renderContent(); 
         });
     }
 
@@ -262,7 +284,13 @@
             const d = document.createElement('div');
             d.className = `subject-link ${currentSub === k ? 'active' : ''}`;
             d.innerHTML = subNames[k];
-            d.onclick = () => { currentSub = k; document.getElementById('subject-title').innerText = subNames[k]; renderSidebar(); renderContent(); if(window.innerWidth < 768) toggleSidebar(); };
+            d.onclick = () => { 
+                currentSub = k; 
+                document.getElementById('subject-title').innerText = subNames[k]; 
+                renderSidebar(); 
+                renderContent(); 
+                if(window.innerWidth < 768) toggleSidebar(); 
+            };
             list.appendChild(d);
         });
         document.getElementById('subject-title').innerText = subNames[currentSub];
@@ -329,7 +357,6 @@
         if(idx !== "") masterData[currentSub][idx] = {name, resources: tempResources}; 
         else masterData[currentSub].push({name, resources: tempResources});
         
-        // FIXED: Clear empty slots and update
         db.ref('academyData').set(masterData).then(() => {
             document.getElementById('editor-modal').style.display='none';
         });
@@ -341,7 +368,7 @@
         db.ref('access').on('value', s => {
             const data = s.val() || {admins:{}, students:{}};
             
-            // Student List - FIXED: loading data from database correctly
+            // Student List
             const stuUI = document.getElementById('student-list-ui'); stuUI.innerHTML = '';
             Object.keys(data.students || {}).forEach(k => { 
                 stuUI.innerHTML += `<div style="display:flex; justify-content:space-between; padding:8px 12px; background:#f0fdf4; margin-bottom:5px; border-radius:10px; border:1px solid #dcfce7;">
@@ -367,20 +394,14 @@
         if(action === 'add') {
             const u = document.getElementById(type==='student'?'stu-u':'adm-u').value.trim(), 
                   p = document.getElementById(type==='student'?'stu-p':'adm-p').value.trim();
-            
-            // FIXED: Proper database push for new students/admins
             if(u && p) {
                 db.ref(`access/${type}s`).push({u, p}).then(() => {
                     document.getElementById(type==='student'?'stu-u':'adm-u').value = '';
                     document.getElementById(type==='student'?'stu-p':'adm-p').value = '';
                 });
-            } else {
-                alert("Please fill both fields!");
-            }
+            } else { alert("Fill both fields!"); }
         } else if(action === 'del') { 
-            if(confirm("Are you sure you want to remove this access?")) {
-                db.ref(`access/${type}s`).child(key).remove(); 
-            }
+            if(confirm("Are you sure?")) { db.ref(`access/${type}s`).child(key).remove(); }
         }
     }
 </script>
